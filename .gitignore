@@ -1,0 +1,92 @@
+# ---------- Ansible ----------
+*.retry
+.ansible/
+ansible.log
+*.log
+
+# Vault passwords and keys (never commit these)
+.vault_pass
+.vault_pass.txt
+vault_pass
+vault-password*
+*.vault_pass
+.vault_password
+
+# Local overrides / secrets
+*.local.yml
+*.local.yaml
+secrets.yml
+secrets.yaml
+*.secret
+*.secrets
+.env
+.env.*
+!.env.example
+
+# Fact cache and fetched files
+fact_cache/
+.ansible_facts/
+fetched/
+
+# Local inventories (keep sample/example ones tracked)
+inventory/local*
+inventories/local*
+hosts.local
+
+# Downloaded roles and collections (managed via requirements.yml)
+roles/external/
+roles/galaxy/
+collections/ansible_collections/
+.galaxy_cache/
+
+# Molecule / testing
+.molecule/
+molecule/**/.molecule/
+.cache/
+.tox/
+.pytest_cache/
+.vagrant/
+
+# Lint caches
+.ansible-lint-cache/
+.yamllint-cache/
+
+# ---------- Python (virtualenvs, tooling) ----------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.python-version
+
+# ---------- Jinja2 / rendered output ----------
+# Generated files rendered from templates for local testing
+rendered/
+output/
+build/
+*.rendered
+*.rendered.*
+
+# ---------- SSH / certs / keys ----------
+*.pem
+*.key
+*.crt
+*.p12
+id_rsa*
+id_ed25519*
+*.pub.local
+
+# ---------- Editors / OS ----------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ---------- Misc ----------
+*.bak
+*.tmp
+*.orig
