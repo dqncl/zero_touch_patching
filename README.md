@@ -1,5 +1,6 @@
 ## ansible - python venv
 
+```bash
 apt install ansible python3-venv virtualenv
 
 export PYTHON=$(ansible --version | awk '/python version/ {print $NF}' | tr -d "\(\)")
@@ -10,3 +11,4 @@ cat << 'EOF' >> ~/.bashrc
 source ~/ansible-venv/bin/activate
 export PYTHONPATH=$(ls -1d ~/ansible-venv/lib/python*/site-packages)
 EOF
+```
