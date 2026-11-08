@@ -1,0 +1,4 @@
+- name: Remove snapshot
+  ansible.builtin.include_tasks: main.yml
+  vars:
+    ztp_snapshot_action: remove

@@ -1,0 +1,13 @@
+- name: Free space on /var
+  ansible.builtin.command: df -Pk /var
+  register: ztp_u_df
+  changed_when: false
+  when: ansible_facts.os_family != 'Windows'
+
+- name: Assert enough free space
+  ansible.builtin.assert:
+    that: (ztp_u_df.stdout_lines[-1].split()[3] | int) // 1024 >= ztp_update_min_free_mb | int
+    fail_msg: "{{ inventory_hostname }}: less than {{ ztp_update_min_free_mb }} MB free on /var"
+    quiet: true
+  when: ansible_facts.os_family != 'Windows'
+

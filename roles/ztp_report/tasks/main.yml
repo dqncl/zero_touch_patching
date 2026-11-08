@@ -1,0 +1,70 @@
+- name: Check that both sysinfo files exist
+  ansible.builtin.stat:
+    path: "{{ ztp_report_dir }}/{{ inventory_hostname }}/sysinfo_{{ item }}.json"
+  loop: [before, after]
+  register: ztp_rp_stat
+  delegate_to: localhost
+  become: false
+
+- name: Assert sysinfo files are present
+  ansible.builtin.assert:
+    that: ztp_rp_stat.results | rejectattr('stat.exists') | list | length == 0
+    fail_msg: "{{ inventory_hostname }}: sysinfo_before.json or sysinfo_after.json missing in {{ ztp_report_dir }}"
+    quiet: true
+
+# lookup('file') runs on the controller, so no delegation is needed
+- name: Load data
+  ansible.builtin.set_fact:
+    ztp_rp_before: "{{ (lookup('ansible.builtin.file', ztp_report_dir ~ '/' ~ inventory_hostname ~ '/sysinfo_before.json') | from_json).data }}"
+    ztp_rp_after: "{{ (lookup('ansible.builtin.file', ztp_report_dir ~ '/' ~ inventory_hostname ~ '/sysinfo_after.json') | from_json).data }}"
+    ztp_rp_results: []
+
+- name: Evaluate each category
+  ansible.builtin.include_tasks: evaluate.yml
+  loop: "{{ (ztp_rp_before.keys() | list + ztp_rp_after.keys() | list) | unique | sort }}"
+  loop_control:
+    loop_var: ztp_rp_cat
+
+- name: Compute verdict
+  ansible.builtin.set_fact:
+    ztp_diff_clean: >-
+      {{ ztp_rp_results | selectattr('verdict', 'in', ztp_report_keep_snapshot_on)
+         | list | length == 0 }}
+
+- name: Create host report directory
+  ansible.builtin.file:
+    path: "{{ ztp_report_dir }}/{{ inventory_hostname }}"
+    state: directory
+    mode: "0750"
+  delegate_to: localhost
+  become: false
+
+- name: Write machine-readable diff
+  ansible.builtin.copy:
+    content: "{{ {'host': inventory_hostname, 'run_id': ztp_run_id, 'clean': ztp_diff_clean | bool, 'results': ztp_rp_results} | to_nice_json }}\n"
+    dest: "{{ ztp_report_dir }}/{{ inventory_hostname }}/diff.json"
+    mode: "0640"
+  delegate_to: localhost
+  become: false
+
+- name: Write human-readable diff
+  ansible.builtin.template:
+    src: diff.txt.j2
+    dest: "{{ ztp_report_dir }}/{{ inventory_hostname }}/diff.txt"
+    mode: "0640"
+  delegate_to: localhost
+  become: false
+
+- name: Show verdict
+  ansible.builtin.debug:
+    msg: >-
+      {{ inventory_hostname }}: {{ 'CLEAN' if ztp_diff_clean | bool else 'DIFFERENCES' }}
+      {{ ztp_rp_results | rejectattr('verdict', 'in', ['ok', 'info'])
+         | map(attribute='category') | list }}
+
+- name: Fail host on differences (optional)
+  ansible.builtin.fail:
+    msg: "{{ inventory_hostname }}: post-patch state differs, snapshot kept. See {{ ztp_report_dir }}/{{ inventory_hostname }}/diff.txt"
+  when:
+    - ztp_report_fail_on_diff | bool
+    - not ztp_diff_clean | bool

@@ -1,0 +1,35 @@
+- name: Running services (enabled and reporting status ok)
+  ansible.builtin.shell: |
+    for f in $(service -e); do
+      s=$(basename "$f")
+      service "$s" status >/dev/null 2>&1 && echo "$s"
+    done
+  args:
+    executable: /bin/sh
+  register: ztp_si_services
+  changed_when: false
+
+- name: Listening TCP sockets
+  ansible.builtin.command: sockstat -46lqP tcp
+  register: ztp_si_sock
+  changed_when: false
+
+- name: Kernel and userland patch level
+  ansible.builtin.command: freebsd-version -ku
+  register: ztp_si_version
+  changed_when: false
+
+- name: Disk usage
+  ansible.builtin.include_tasks: bsd_df.yml
+
+- name: Build sysinfo data
+  ansible.builtin.set_fact:
+    ztp_sysinfo_data:
+      services_running: "{{ ztp_si_services.stdout_lines | unique | sort | list }}"
+      listening_ports: >-
+        {{ ztp_si_sock.stdout_lines | map('split') | map(attribute='5')
+           | map('regex_replace', '^.*:', '') | map('int')
+           | unique | sort | list }}
+      disk: "{{ ztp_si_disk }}"
+      kernel: "{{ ztp_si_version.stdout_lines[0] }}"
+      patch_level: "{{ ztp_si_version.stdout_lines[1] }}"

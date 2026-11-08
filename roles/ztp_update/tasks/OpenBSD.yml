@@ -1,0 +1,22 @@
+- name: List available syspatches
+  ansible.builtin.command: syspatch -c
+  register: ztp_u_sp_avail
+  changed_when: false
+
+- name: Apply syspatches
+  ansible.builtin.command: syspatch
+  register: ztp_u_sp
+  when: ztp_u_sp_avail.stdout_lines | length > 0
+
+- name: Upgrade packages
+  community.general.openbsd_pkg:
+    name: "*"
+    state: latest
+  register: ztp_u_pkg
+
+- name: Set result
+  ansible.builtin.set_fact:
+    ztp_update_result:
+      changed: "{{ ztp_u_sp is changed or ztp_u_pkg.changed }}"
+      reboot_required: "{{ ztp_u_sp_avail.stdout_lines | length > 0 }}"
+

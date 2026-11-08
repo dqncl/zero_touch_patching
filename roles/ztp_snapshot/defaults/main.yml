@@ -1,0 +1,9 @@
+ztp_hypervisor: ""
+ztp_hypervisors: {}
+ztp_snapshot_name: "ztp-{{ ztp_run_id | default('manual') }}"
+ztp_snapshot_description: "Zero touch patching - created by Ansible"
+ztp_snapshot_with_memory: false
+ztp_snapshot_quiesce: false        # VMware only, needs VMware Tools
+ztp_snapshot_timeout: 600
+ztp_snapshot_no_log: true
+

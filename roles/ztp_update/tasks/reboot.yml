@@ -1,0 +1,17 @@
+- name: Reboot (Linux / BSD)
+  ansible.builtin.reboot:
+    msg: "ZTP patching run {{ ztp_run_id }}"
+    reboot_timeout: "{{ ztp_update_reboot_timeout }}"
+    post_reboot_delay: "{{ ztp_update_post_reboot_delay }}"
+    test_command: whoami
+    boot_time_command: "{{ ztp_update_boot_time_command[ansible_facts.os_family] | default(omit) }}"
+  when: ansible_facts.os_family != 'Windows'
+
+- name: Reboot (Windows)
+  ansible.windows.win_reboot:
+    msg: "ZTP patching run {{ ztp_run_id }}"
+    reboot_timeout: "{{ ztp_update_reboot_timeout }}"
+    post_reboot_delay: "{{ ztp_update_post_reboot_delay }}"
+    test_command: whoami
+  when: ansible_facts.os_family == 'Windows'
+

@@ -1,0 +1,52 @@
+- name: Validate label
+  ansible.builtin.assert:
+    that: ztp_sysinfo_label in ['before', 'after']
+    fail_msg: "ztp_sysinfo_label must be 'before' or 'after'"
+    quiet: true
+
+- name: Let services settle after reboot
+  ansible.builtin.wait_for:
+    timeout: "{{ ztp_sysinfo_settle_seconds }}"
+  delegate_to: localhost
+  become: false
+  when:
+    - ztp_sysinfo_label == 'after'
+    - ztp_sysinfo_settle_seconds | int > 0
+
+- name: Collect OS-specific data
+  ansible.builtin.include_tasks: "{{ lookup('ansible.builtin.first_found', ztp_sysinfo_lookup) }}"
+  vars:
+    ztp_sysinfo_lookup:
+      files:
+        - "{{ ansible_facts.os_family }}.yml"
+        - "{{ ansible_facts.system }}.yml"
+
+- name: Assemble result
+  ansible.builtin.set_fact:
+    ztp_sysinfo_output:
+      host: "{{ inventory_hostname }}"
+      run_id: "{{ ztp_run_id }}"
+      label: "{{ ztp_sysinfo_label }}"
+      collected_at: "{{ '%Y-%m-%dT%H:%M:%S%z' | strftime }}"
+      data: "{{ ztp_sysinfo_data }}"
+
+- name: Store result as fact
+  ansible.builtin.set_fact:
+    "ztp_sysinfo_{{ ztp_sysinfo_label }}": "{{ ztp_sysinfo_data }}"
+
+- name: Create host report directory
+  ansible.builtin.file:
+    path: "{{ ztp_report_dir }}/{{ inventory_hostname }}"
+    state: directory
+    mode: "0750"
+  delegate_to: localhost
+  become: false
+
+- name: Write sysinfo file on controller
+  ansible.builtin.copy:
+    content: "{{ ztp_sysinfo_output | to_nice_json }}\n"
+    dest: "{{ ztp_report_dir }}/{{ inventory_hostname }}/sysinfo_{{ ztp_sysinfo_label }}.json"
+    mode: "0640"
+  delegate_to: localhost
+  become: false
+

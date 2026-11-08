@@ -1,0 +1,9 @@
+# tasks/summary.yml
+- name: Write run summary
+  ansible.builtin.template:
+    src: summary.txt.j2
+    dest: "{{ ztp_report_dir }}/summary.txt"
+    mode: "0640"
+  delegate_to: localhost
+  run_once: true
+  become: false

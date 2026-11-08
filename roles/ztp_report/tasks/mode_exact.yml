@@ -1,0 +1,432 @@
+- name: Load values
+  ansible.builtin.set_fact:
+    ztp_rp_b: "{{ ztp_rp_before[ztp_rp_cat] }}"
+    ztp_rp_a: "{{ ztp_rp_after[ztp_rp_cat] }}"
+
+- name: Compare lists
+  when: ztp_rp_b is iterable and ztp_rp_b is not string and ztp_rp_b is not mapping
+  block:
+    - name: Build ignore regex
+      ansible.builtin.set_fact:
+        ztp_rp_ignore_re: >-
+          {{ ('^(?:' ~ (ztp_rp_rule.ignore | join('|')) ~ ')$')
+             if ztp_rp_rule.ignore | length > 0 else '(?!)' }}
+
+    - name: Apply ignore list
+      ansible.builtin.set_fact:
+        ztp_rp_bl: "{{ ztp_rp_b | map('string') | reject('match', ztp_rp_ignore_re) | list }}"
+        ztp_rp_al: "{{ ztp_rp_a | map('string') | reject('match', ztp_rp_ignore_re) | list }}"
+
+    - name: Diff both directions
+      ansible.builtin.set_fact:
+        ztp_rp_missing: "{{ ztp_rp_bl | difference(ztp_rp_al) | sort }}"
+        ztp_rp_added: "{{ ztp_rp_al | difference(ztp_rp_bl) | sort }}"
+
+    - name: Result
+      ansible.builtin.set_fact:
+        ztp_rp_result:
+          category: "{{ ztp_rp_cat }}"
+          mode: exact
+          verdict: >-
+            {{ ztp_rp_rule.on_missing if ztp_rp_missing | length > 0
+               else ztp_rp_rule.on_added if ztp_rp_added | length > 0
+               else 'ok' }}
+          details:
+            missing: "{{ ztp_rp_missing }}"
+            added: "{{ ztp_rp_added }}"
+
+- name: Compare scalars
+  when: not (ztp_rp_b is iterable and ztp_rp_b is not string and ztp_rp_b is not mapping)
+  ansible.builtin.set_fact:
+    ztp_rp_result:
+      category: "{{ ztp_rp_cat }}"
+      mode: exact
+      verdict: "{{ 'ok' if ztp_rp_b == ztp_rp_a else ztp_rp_rule.on_changed }}"
+      details:
+        before: "{{ ztp_rp_b }}"
+        after: "{{ ztp_rp_a }}"
+
+      - name: Load values
+  ansible.builtin.set_fact:
+    ztp_rp_b: "{{ ztp_rp_before[ztp_rp_cat] }}"
+    ztp_rp_a: "{{ ztp_rp_after[ztp_rp_cat] }}"
+
+- name: Compare lists
+  when: ztp_rp_b is iterable and ztp_rp_b is not string and ztp_rp_b is not mapping
+  block:
+    - name: Build ignore regex
+      ansible.builtin.set_fact:
+        ztp_rp_ignore_re: >-
+          {{ ('^(?:' ~ (ztp_rp_rule.ignore | join('|')) ~ ')$')
+             if ztp_rp_rule.ignore | length > 0 else '(?!)' }}
+
+    - name: Apply ignore list
+      ansible.builtin.set_fact:
+        ztp_rp_bl: "{{ ztp_rp_b | map('string') | reject('match', ztp_rp_ignore_re) | list }}"
+        ztp_rp_al: "{{ ztp_rp_a | map('string') | reject('match', ztp_rp_ignore_re) | list }}"
+
+    - name: Diff both directions
+      ansible.builtin.set_fact:
+        ztp_rp_missing: "{{ ztp_rp_bl | difference(ztp_rp_al) | sort }}"
+        ztp_rp_added: "{{ ztp_rp_al | difference(ztp_rp_bl) | sort }}"
+
+    - name: Result
+      ansible.builtin.set_fact:
+        ztp_rp_result:
+          category: "{{ ztp_rp_cat }}"
+          mode: exact
+          verdict: >-
+            {{ ztp_rp_rule.on_missing if ztp_rp_missing | length > 0
+               else ztp_rp_rule.on_added if ztp_rp_added | length > 0
+               else 'ok' }}
+          details:
+            missing: "{{ ztp_rp_missing }}"
+            added: "{{ ztp_rp_added }}"
+
+- name: Compare scalars
+  when: not (ztp_rp_b is iterable and ztp_rp_b is not string and ztp_rp_b is not mapping)
+  ansible.builtin.set_fact:
+    ztp_rp_result:
+      category: "{{ ztp_rp_cat }}"
+      mode: exact
+      verdict: "{{ 'ok' if ztp_rp_b == ztp_rp_a else ztp_rp_rule.on_changed }}"
+      details:
+        before: "{{ ztp_rp_b }}"
+        after: "{{ ztp_rp_a }}"
+
+      - name: Load values
+  ansible.builtin.set_fact:
+    ztp_rp_b: "{{ ztp_rp_before[ztp_rp_cat] }}"
+    ztp_rp_a: "{{ ztp_rp_after[ztp_rp_cat] }}"
+
+- name: Compare lists
+  when: ztp_rp_b is iterable and ztp_rp_b is not string and ztp_rp_b is not mapping
+  block:
+    - name: Build ignore regex
+      ansible.builtin.set_fact:
+        ztp_rp_ignore_re: >-
+          {{ ('^(?:' ~ (ztp_rp_rule.ignore | join('|')) ~ ')$')
+             if ztp_rp_rule.ignore | length > 0 else '(?!)' }}
+
+    - name: Apply ignore list
+      ansible.builtin.set_fact:
+        ztp_rp_bl: "{{ ztp_rp_b | map('string') | reject('match', ztp_rp_ignore_re) | list }}"
+        ztp_rp_al: "{{ ztp_rp_a | map('string') | reject('match', ztp_rp_ignore_re) | list }}"
+
+    - name: Diff both directions
+      ansible.builtin.set_fact:
+        ztp_rp_missing: "{{ ztp_rp_bl | difference(ztp_rp_al) | sort }}"
+        ztp_rp_added: "{{ ztp_rp_al | difference(ztp_rp_bl) | sort }}"
+
+    - name: Result
+      ansible.builtin.set_fact:
+        ztp_rp_result:
+          category: "{{ ztp_rp_cat }}"
+          mode: exact
+          verdict: >-
+            {{ ztp_rp_rule.on_missing if ztp_rp_missing | length > 0
+               else ztp_rp_rule.on_added if ztp_rp_added | length > 0
+               else 'ok' }}
+          details:
+            missing: "{{ ztp_rp_missing }}"
+            added: "{{ ztp_rp_added }}"
+
+- name: Compare scalars
+  when: not (ztp_rp_b is iterable and ztp_rp_b is not string and ztp_rp_b is not mapping)
+  ansible.builtin.set_fact:
+    ztp_rp_result:
+      category: "{{ ztp_rp_cat }}"
+      mode: exact
+      verdict: "{{ 'ok' if ztp_rp_b == ztp_rp_a else ztp_rp_rule.on_changed }}"
+      details:
+        before: "{{ ztp_rp_b }}"
+        after: "{{ ztp_rp_a }}"
+
+      - name: Load values
+  ansible.builtin.set_fact:
+    ztp_rp_b: "{{ ztp_rp_before[ztp_rp_cat] }}"
+    ztp_rp_a: "{{ ztp_rp_after[ztp_rp_cat] }}"
+
+- name: Compare lists
+  when: ztp_rp_b is iterable and ztp_rp_b is not string and ztp_rp_b is not mapping
+  block:
+    - name: Build ignore regex
+      ansible.builtin.set_fact:
+        ztp_rp_ignore_re: >-
+          {{ ('^(?:' ~ (ztp_rp_rule.ignore | join('|')) ~ ')$')
+             if ztp_rp_rule.ignore | length > 0 else '(?!)' }}
+
+    - name: Apply ignore list
+      ansible.builtin.set_fact:
+        ztp_rp_bl: "{{ ztp_rp_b | map('string') | reject('match', ztp_rp_ignore_re) | list }}"
+        ztp_rp_al: "{{ ztp_rp_a | map('string') | reject('match', ztp_rp_ignore_re) | list }}"
+
+    - name: Diff both directions
+      ansible.builtin.set_fact:
+        ztp_rp_missing: "{{ ztp_rp_bl | difference(ztp_rp_al) | sort }}"
+        ztp_rp_added: "{{ ztp_rp_al | difference(ztp_rp_bl) | sort }}"
+
+    - name: Result
+      ansible.builtin.set_fact:
+        ztp_rp_result:
+          category: "{{ ztp_rp_cat }}"
+          mode: exact
+          verdict: >-
+            {{ ztp_rp_rule.on_missing if ztp_rp_missing | length > 0
+               else ztp_rp_rule.on_added if ztp_rp_added | length > 0
+               else 'ok' }}
+          details:
+            missing: "{{ ztp_rp_missing }}"
+            added: "{{ ztp_rp_added }}"
+
+- name: Compare scalars
+  when: not (ztp_rp_b is iterable and ztp_rp_b is not string and ztp_rp_b is not mapping)
+  ansible.builtin.set_fact:
+    ztp_rp_result:
+      category: "{{ ztp_rp_cat }}"
+      mode: exact
+      verdict: "{{ 'ok' if ztp_rp_b == ztp_rp_a else ztp_rp_rule.on_changed }}"
+      details:
+        before: "{{ ztp_rp_b }}"
+        after: "{{ ztp_rp_a }}"
+
+      - name: Load values
+  ansible.builtin.set_fact:
+    ztp_rp_b: "{{ ztp_rp_before[ztp_rp_cat] }}"
+    ztp_rp_a: "{{ ztp_rp_after[ztp_rp_cat] }}"
+
+- name: Compare lists
+  when: ztp_rp_b is iterable and ztp_rp_b is not string and ztp_rp_b is not mapping
+  block:
+    - name: Build ignore regex
+      ansible.builtin.set_fact:
+        ztp_rp_ignore_re: >-
+          {{ ('^(?:' ~ (ztp_rp_rule.ignore | join('|')) ~ ')$')
+             if ztp_rp_rule.ignore | length > 0 else '(?!)' }}
+
+    - name: Apply ignore list
+      ansible.builtin.set_fact:
+        ztp_rp_bl: "{{ ztp_rp_b | map('string') | reject('match', ztp_rp_ignore_re) | list }}"
+        ztp_rp_al: "{{ ztp_rp_a | map('string') | reject('match', ztp_rp_ignore_re) | list }}"
+
+    - name: Diff both directions
+      ansible.builtin.set_fact:
+        ztp_rp_missing: "{{ ztp_rp_bl | difference(ztp_rp_al) | sort }}"
+        ztp_rp_added: "{{ ztp_rp_al | difference(ztp_rp_bl) | sort }}"
+
+    - name: Result
+      ansible.builtin.set_fact:
+        ztp_rp_result:
+          category: "{{ ztp_rp_cat }}"
+          mode: exact
+          verdict: >-
+            {{ ztp_rp_rule.on_missing if ztp_rp_missing | length > 0
+               else ztp_rp_rule.on_added if ztp_rp_added | length > 0
+               else 'ok' }}
+          details:
+            missing: "{{ ztp_rp_missing }}"
+            added: "{{ ztp_rp_added }}"
+
+- name: Compare scalars
+  when: not (ztp_rp_b is iterable and ztp_rp_b is not string and ztp_rp_b is not mapping)
+  ansible.builtin.set_fact:
+    ztp_rp_result:
+      category: "{{ ztp_rp_cat }}"
+      mode: exact
+      verdict: "{{ 'ok' if ztp_rp_b == ztp_rp_a else ztp_rp_rule.on_changed }}"
+      details:
+        before: "{{ ztp_rp_b }}"
+        after: "{{ ztp_rp_a }}"
+
+      - name: Load values
+  ansible.builtin.set_fact:
+    ztp_rp_b: "{{ ztp_rp_before[ztp_rp_cat] }}"
+    ztp_rp_a: "{{ ztp_rp_after[ztp_rp_cat] }}"
+
+- name: Compare lists
+  when: ztp_rp_b is iterable and ztp_rp_b is not string and ztp_rp_b is not mapping
+  block:
+    - name: Build ignore regex
+      ansible.builtin.set_fact:
+        ztp_rp_ignore_re: >-
+          {{ ('^(?:' ~ (ztp_rp_rule.ignore | join('|')) ~ ')$')
+             if ztp_rp_rule.ignore | length > 0 else '(?!)' }}
+
+    - name: Apply ignore list
+      ansible.builtin.set_fact:
+        ztp_rp_bl: "{{ ztp_rp_b | map('string') | reject('match', ztp_rp_ignore_re) | list }}"
+        ztp_rp_al: "{{ ztp_rp_a | map('string') | reject('match', ztp_rp_ignore_re) | list }}"
+
+    - name: Diff both directions
+      ansible.builtin.set_fact:
+        ztp_rp_missing: "{{ ztp_rp_bl | difference(ztp_rp_al) | sort }}"
+        ztp_rp_added: "{{ ztp_rp_al | difference(ztp_rp_bl) | sort }}"
+
+    - name: Result
+      ansible.builtin.set_fact:
+        ztp_rp_result:
+          category: "{{ ztp_rp_cat }}"
+          mode: exact
+          verdict: >-
+            {{ ztp_rp_rule.on_missing if ztp_rp_missing | length > 0
+               else ztp_rp_rule.on_added if ztp_rp_added | length > 0
+               else 'ok' }}
+          details:
+            missing: "{{ ztp_rp_missing }}"
+            added: "{{ ztp_rp_added }}"
+
+- name: Compare scalars
+  when: not (ztp_rp_b is iterable and ztp_rp_b is not string and ztp_rp_b is not mapping)
+  ansible.builtin.set_fact:
+    ztp_rp_result:
+      category: "{{ ztp_rp_cat }}"
+      mode: exact
+      verdict: "{{ 'ok' if ztp_rp_b == ztp_rp_a else ztp_rp_rule.on_changed }}"
+      details:
+        before: "{{ ztp_rp_b }}"
+        after: "{{ ztp_rp_a }}"
+
+      - name: Load values
+  ansible.builtin.set_fact:
+    ztp_rp_b: "{{ ztp_rp_before[ztp_rp_cat] }}"
+    ztp_rp_a: "{{ ztp_rp_after[ztp_rp_cat] }}"
+
+- name: Compare lists
+  when: ztp_rp_b is iterable and ztp_rp_b is not string and ztp_rp_b is not mapping
+  block:
+    - name: Build ignore regex
+      ansible.builtin.set_fact:
+        ztp_rp_ignore_re: >-
+          {{ ('^(?:' ~ (ztp_rp_rule.ignore | join('|')) ~ ')$')
+             if ztp_rp_rule.ignore | length > 0 else '(?!)' }}
+
+    - name: Apply ignore list
+      ansible.builtin.set_fact:
+        ztp_rp_bl: "{{ ztp_rp_b | map('string') | reject('match', ztp_rp_ignore_re) | list }}"
+        ztp_rp_al: "{{ ztp_rp_a | map('string') | reject('match', ztp_rp_ignore_re) | list }}"
+
+    - name: Diff both directions
+      ansible.builtin.set_fact:
+        ztp_rp_missing: "{{ ztp_rp_bl | difference(ztp_rp_al) | sort }}"
+        ztp_rp_added: "{{ ztp_rp_al | difference(ztp_rp_bl) | sort }}"
+
+    - name: Result
+      ansible.builtin.set_fact:
+        ztp_rp_result:
+          category: "{{ ztp_rp_cat }}"
+          mode: exact
+          verdict: >-
+            {{ ztp_rp_rule.on_missing if ztp_rp_missing | length > 0
+               else ztp_rp_rule.on_added if ztp_rp_added | length > 0
+               else 'ok' }}
+          details:
+            missing: "{{ ztp_rp_missing }}"
+            added: "{{ ztp_rp_added }}"
+
+- name: Compare scalars
+  when: not (ztp_rp_b is iterable and ztp_rp_b is not string and ztp_rp_b is not mapping)
+  ansible.builtin.set_fact:
+    ztp_rp_result:
+      category: "{{ ztp_rp_cat }}"
+      mode: exact
+      verdict: "{{ 'ok' if ztp_rp_b == ztp_rp_a else ztp_rp_rule.on_changed }}"
+      details:
+        before: "{{ ztp_rp_b }}"
+        after: "{{ ztp_rp_a }}"
+
+      - name: Load values
+  ansible.builtin.set_fact:
+    ztp_rp_b: "{{ ztp_rp_before[ztp_rp_cat] }}"
+    ztp_rp_a: "{{ ztp_rp_after[ztp_rp_cat] }}"
+
+- name: Compare lists
+  when: ztp_rp_b is iterable and ztp_rp_b is not string and ztp_rp_b is not mapping
+  block:
+    - name: Build ignore regex
+      ansible.builtin.set_fact:
+        ztp_rp_ignore_re: >-
+          {{ ('^(?:' ~ (ztp_rp_rule.ignore | join('|')) ~ ')$')
+             if ztp_rp_rule.ignore | length > 0 else '(?!)' }}
+
+    - name: Apply ignore list
+      ansible.builtin.set_fact:
+        ztp_rp_bl: "{{ ztp_rp_b | map('string') | reject('match', ztp_rp_ignore_re) | list }}"
+        ztp_rp_al: "{{ ztp_rp_a | map('string') | reject('match', ztp_rp_ignore_re) | list }}"
+
+    - name: Diff both directions
+      ansible.builtin.set_fact:
+        ztp_rp_missing: "{{ ztp_rp_bl | difference(ztp_rp_al) | sort }}"
+        ztp_rp_added: "{{ ztp_rp_al | difference(ztp_rp_bl) | sort }}"
+
+    - name: Result
+      ansible.builtin.set_fact:
+        ztp_rp_result:
+          category: "{{ ztp_rp_cat }}"
+          mode: exact
+          verdict: >-
+            {{ ztp_rp_rule.on_missing if ztp_rp_missing | length > 0
+               else ztp_rp_rule.on_added if ztp_rp_added | length > 0
+               else 'ok' }}
+          details:
+            missing: "{{ ztp_rp_missing }}"
+            added: "{{ ztp_rp_added }}"
+
+- name: Compare scalars
+  when: not (ztp_rp_b is iterable and ztp_rp_b is not string and ztp_rp_b is not mapping)
+  ansible.builtin.set_fact:
+    ztp_rp_result:
+      category: "{{ ztp_rp_cat }}"
+      mode: exact
+      verdict: "{{ 'ok' if ztp_rp_b == ztp_rp_a else ztp_rp_rule.on_changed }}"
+      details:
+        before: "{{ ztp_rp_b }}"
+        after: "{{ ztp_rp_a }}"
+
+      - name: Load values
+  ansible.builtin.set_fact:
+    ztp_rp_b: "{{ ztp_rp_before[ztp_rp_cat] }}"
+    ztp_rp_a: "{{ ztp_rp_after[ztp_rp_cat] }}"
+
+- name: Compare lists
+  when: ztp_rp_b is iterable and ztp_rp_b is not string and ztp_rp_b is not mapping
+  block:
+    - name: Build ignore regex
+      ansible.builtin.set_fact:
+        ztp_rp_ignore_re: >-
+          {{ ('^(?:' ~ (ztp_rp_rule.ignore | join('|')) ~ ')$')
+             if ztp_rp_rule.ignore | length > 0 else '(?!)' }}
+
+    - name: Apply ignore list
+      ansible.builtin.set_fact:
+        ztp_rp_bl: "{{ ztp_rp_b | map('string') | reject('match', ztp_rp_ignore_re) | list }}"
+        ztp_rp_al: "{{ ztp_rp_a | map('string') | reject('match', ztp_rp_ignore_re) | list }}"
+
+    - name: Diff both directions
+      ansible.builtin.set_fact:
+        ztp_rp_missing: "{{ ztp_rp_bl | difference(ztp_rp_al) | sort }}"
+        ztp_rp_added: "{{ ztp_rp_al | difference(ztp_rp_bl) | sort }}"
+
+    - name: Result
+      ansible.builtin.set_fact:
+        ztp_rp_result:
+          category: "{{ ztp_rp_cat }}"
+          mode: exact
+          verdict: >-
+            {{ ztp_rp_rule.on_missing if ztp_rp_missing | length > 0
+               else ztp_rp_rule.on_added if ztp_rp_added | length > 0
+               else 'ok' }}
+          details:
+            missing: "{{ ztp_rp_missing }}"
+            added: "{{ ztp_rp_added }}"
+
+- name: Compare scalars
+  when: not (ztp_rp_b is iterable and ztp_rp_b is not string and ztp_rp_b is not mapping)
+  ansible.builtin.set_fact:
+    ztp_rp_result:
+      category: "{{ ztp_rp_cat }}"
+      mode: exact
+      verdict: "{{ 'ok' if ztp_rp_b == ztp_rp_a else ztp_rp_rule.on_changed }}"
+      details:
+        before: "{{ ztp_rp_b }}"
+        after: "{{ ztp_rp_a }}"
+

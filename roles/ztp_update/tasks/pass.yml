@@ -1,0 +1,32 @@
+- name: "Pass {{ ztp_u_pass }}: install updates"
+  ansible.builtin.include_tasks: "{{ ansible_facts.os_family }}.yml"
+
+- name: Decide on reboot
+  ansible.builtin.set_fact:
+    ztp_u_do_reboot: >-
+      {{ ztp_update_reboot != 'never'
+         and (ztp_update_result.reboot_required | bool
+              or (ztp_update_reboot == 'always' and ztp_u_pass | int == 1)) }}
+
+- name: Reboot
+  ansible.builtin.include_tasks: reboot.yml
+  when: ztp_u_do_reboot | bool
+
+- name: Track progress
+  ansible.builtin.set_fact:
+    ztp_u_changed: "{{ ztp_u_changed | bool or ztp_update_result.changed | bool }}"
+    ztp_u_rebooted: "{{ ztp_u_rebooted | bool or ztp_u_do_reboot | bool }}"
+    ztp_u_pending_reboot: "{{ ztp_update_result.reboot_required | bool and not ztp_u_do_reboot | bool }}"
+    ztp_u_continue: >-
+      {{ ztp_update_result.again | default(false) | bool
+         and not (ztp_update_result.reboot_required | bool and not ztp_u_do_reboot | bool) }}
+
+- name: Next pass
+  when:
+    - ztp_u_continue | bool
+    - ztp_u_pass | int < ztp_update_max_passes | int
+  block:
+    - ansible.builtin.set_fact:
+        ztp_u_pass: "{{ ztp_u_pass | int + 1 }}"
+    - ansible.builtin.include_tasks: pass.yml
+

@@ -1,0 +1,11 @@
+Host:    {{ inventory_hostname }}
+Run:     {{ ztp_run_id }}
+Result:  {{ 'CLEAN - snapshot can be removed' if ztp_diff_clean | bool else 'DIFFERENCES - snapshot kept' }}
+
+{% for r in ztp_rp_results | sort(attribute='category') %}
+[{{ '%-4s' | format(r.verdict | upper) }}] {{ r.category }} ({{ r.mode }})
+{% for k, v in r.details.items() if v is not none and v | length > 0 %}
+         {{ k }}: {{ v | to_json }}
+{% endfor %}
+
+{% endfor %}

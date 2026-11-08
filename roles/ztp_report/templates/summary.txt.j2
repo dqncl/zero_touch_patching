@@ -1,0 +1,7 @@
+{# templates/summary.txt.j2 #}
+Run {{ ztp_run_id }}
+
+{% for h in groups['ztp_targets'] | sort %}
+{% set c = hostvars[h].ztp_diff_clean | default(none) %}
+{{ '%-30s' | format(h) }} {{ 'NOT EVALUATED' if c is none else ('CLEAN' if c | bool else 'DIFFERENCES: ' ~ (hostvars[h].ztp_rp_results | default([]) | rejectattr('verdict', 'in', ['ok', 'info']) | map(attribute='category') | join(', '))) }}
+{% endfor %}

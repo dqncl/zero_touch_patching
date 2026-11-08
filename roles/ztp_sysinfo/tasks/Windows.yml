@@ -1,0 +1,42 @@
+- name: Refresh facts
+  ansible.windows.setup:
+    gather_subset: min
+
+- name: Collect services
+  ansible.windows.win_service_info:
+  register: ztp_si_win_services
+
+- name: Listening TCP ports
+  ansible.windows.win_shell: |
+    $p = @(Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue |
+           Select-Object -ExpandProperty LocalPort | Sort-Object -Unique)
+    ConvertTo-Json -InputObject $p -Compress
+  register: ztp_si_win_ports
+  changed_when: false
+
+- name: Fixed disks
+  ansible.windows.win_shell: |
+    $d = @(Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=3' |
+           Select-Object DeviceID, Size, FreeSpace)
+    ConvertTo-Json -InputObject $d -Compress
+  register: ztp_si_win_disks
+  changed_when: false
+
+- name: Build sysinfo data
+  ansible.builtin.set_fact:
+    ztp_sysinfo_data:
+      services_running: >-
+        {{ ztp_si_win_services.services
+           | selectattr('state', 'equalto', 'running')
+           | map(attribute='name') | unique | sort | list }}
+      listening_ports: "{{ ztp_si_win_ports.stdout | from_json | map('int') | unique | sort | list }}"
+      disk: >-
+        {%- set r = [] -%}
+        {%- for d in ztp_si_win_disks.stdout | from_json if d.Size | int > 0 -%}
+        {%- set _ = r.append({
+              'mount': d.DeviceID,
+              'size_mb': (d.Size / 1048576) | int,
+              'used_pct': (100 - (d.FreeSpace * 100 / d.Size)) | round(1)}) -%}
+        {%- endfor -%}
+        {{ r | sort(attribute='mount') }}
+      kernel: "{{ ansible_facts.os_name }} ({{ ansible_facts.kernel }})"

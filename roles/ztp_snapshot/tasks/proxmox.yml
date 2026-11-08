@@ -1,0 +1,19 @@
+- name: "Proxmox snapshot {{ ztp_snapshot_state }}: {{ ztp_snapshot_name }} ({{ ztp_hypervisor }})"
+  community.general.proxmox_snap:
+    api_host: "{{ ztp_hv.api_host }}"
+    api_user: "{{ ztp_hv.api_user }}"
+    api_token_id: "{{ ztp_hv.api_token_id | default(omit) }}"
+    api_token_secret: "{{ ztp_hv.api_token_secret | default(omit) }}"
+    api_password: "{{ ztp_hv.api_password | default(omit) }}"
+    validate_certs: "{{ ztp_hv.validate_certs | default(true) }}"
+    vmid: "{{ ztp_proxmox_vmid }}"
+    snapname: "{{ ztp_snapshot_name }}"
+    description: "{{ ztp_snapshot_description }}"
+    vmstate: "{{ ztp_snapshot_with_memory }}"
+    timeout: "{{ ztp_snapshot_timeout }}"
+    state: "{{ ztp_snapshot_state }}"
+  delegate_to: localhost
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  no_log: "{{ ztp_snapshot_no_log }}"
+

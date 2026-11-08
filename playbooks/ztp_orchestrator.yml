@@ -1,0 +1,5 @@
+- hosts: localhost
+  gather_facts: false
+  tasks:
+    - ansible.builtin.set_fact:
+        ztp_run_id: "{{ lookup('ansible.builtin.pipe', 'date +%Y%m%d-%H%M%S') }}"

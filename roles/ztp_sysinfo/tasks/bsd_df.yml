@@ -1,0 +1,20 @@
+- name: Local filesystem usage
+  ansible.builtin.command: df -Pkl
+  register: ztp_si_df
+  changed_when: false
+
+- name: Parse df output
+  ansible.builtin.set_fact:
+    ztp_si_disk: >-
+      {%- set r = [] -%}
+      {%- for line in ztp_si_df.stdout_lines[1:] -%}
+      {%- set c = line.split() -%}
+      {%- if c | length == 6 and c[1] | int > 0
+            and c[0] not in ['devfs', 'fdescfs', 'procfs', 'tmpfs'] -%}
+      {%- set _ = r.append({
+            'mount': c[5],
+            'size_mb': (c[1] | int / 1024) | int,
+            'used_pct': (c[2] | int * 100 / c[1] | int) | round(1)}) -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {{ r | sort(attribute='mount') }}

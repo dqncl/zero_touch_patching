@@ -1,0 +1,25 @@
+- name: Skip hosts without hypervisor assignment
+  ansible.builtin.debug:
+    msg: "{{ inventory_hostname }}: no ztp_hypervisor set, snapshot {{ ztp_snapshot_action }} skipped"
+  when: ztp_hypervisor | length == 0
+
+- name: Snapshot handling
+  when: ztp_hypervisor | length > 0
+  block:
+    - name: Validate hypervisor assignment
+      ansible.builtin.assert:
+        that:
+          - ztp_snapshot_action in ['create', 'remove']
+          - ztp_hypervisor in ztp_hypervisors
+          - ztp_hypervisors[ztp_hypervisor].type in ['proxmox', 'vmware']
+        fail_msg: >-
+          {{ inventory_hostname }}: hypervisor '{{ ztp_hypervisor }}' is not defined
+          in ztp_hypervisors or has an unsupported type.
+        quiet: true
+
+    - name: Dispatch to hypervisor type
+      ansible.builtin.include_tasks: "{{ ztp_hv.type }}.yml"
+      vars:
+        ztp_hv: "{{ ztp_hypervisors[ztp_hypervisor] }}"
+        ztp_snapshot_state: "{{ 'present' if ztp_snapshot_action == 'create' else 'absent' }}"
+

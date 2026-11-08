@@ -1,0 +1,20 @@
+- name: Upgrade packages
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: "{{ ztp_update_apt_upgrade }}"
+    lock_timeout: "{{ ztp_update_lock_timeout }}"
+  environment:
+    NEEDRESTART_MODE: a          # no interactive needrestart prompt on Ubuntu
+  register: ztp_u_apt
+
+- name: Check for reboot flag
+  ansible.builtin.stat:
+    path: /var/run/reboot-required
+  register: ztp_u_flag
+
+- name: Set result
+  ansible.builtin.set_fact:
+    ztp_update_result:
+      changed: "{{ ztp_u_apt.changed }}"
+      reboot_required: "{{ ztp_u_flag.stat.exists }}"
+

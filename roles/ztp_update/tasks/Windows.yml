@@ -1,0 +1,15 @@
+- name: Install Windows updates
+  ansible.windows.win_updates:
+    category_names: "{{ ztp_update_windows_categories }}"
+    reject_list: "{{ ztp_update_windows_reject }}"
+    state: installed
+    reboot: false                 # reboot.yml does this, so the flow is the same everywhere
+  register: ztp_u_win
+
+- name: Set result
+  ansible.builtin.set_fact:
+    ztp_update_result:
+      changed: "{{ ztp_u_win.changed }}"
+      reboot_required: "{{ ztp_u_win.reboot_required | default(false) }}"
+      again: "{{ ztp_u_win.installed_update_count | default(0) | int > 0 }}"
+

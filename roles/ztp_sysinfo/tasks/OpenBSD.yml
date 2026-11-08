@@ -1,0 +1,35 @@
+- name: Running services
+  ansible.builtin.command: rcctl ls started
+  register: ztp_si_services
+  changed_when: false
+
+- name: Listening TCP sockets
+  ansible.builtin.shell: |
+    { netstat -an -f inet; netstat -an -f inet6; } |
+      awk '$1 ~ /^tcp/ && $NF == "LISTEN" {print $4}'
+  args:
+    executable: /bin/sh
+  register: ztp_si_sock
+  changed_when: false
+
+- name: Installed syspatch level
+  ansible.builtin.shell: syspatch -l | sort | tail -n 1
+  args:
+    executable: /bin/sh
+  register: ztp_si_syspatch
+  changed_when: false
+  failed_when: false
+
+- name: Disk usage
+  ansible.builtin.include_tasks: bsd_df.yml
+
+- name: Build sysinfo data
+  ansible.builtin.set_fact:
+    ztp_sysinfo_data:
+      services_running: "{{ ztp_si_services.stdout_lines | unique | sort | list }}"
+      listening_ports: >-
+        {{ ztp_si_sock.stdout_lines | map('regex_replace', '^.*\.', '')
+           | map('int') | unique | sort | list }}
+      disk: "{{ ztp_si_disk }}"
+      kernel: "{{ ansible_facts.kernel }}"
+      patch_level: "{{ ztp_si_syspatch.stdout | trim }}"

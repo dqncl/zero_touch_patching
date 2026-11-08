@@ -1,0 +1,36 @@
+- name: Refresh facts (kernel, mounts)
+  ansible.builtin.setup:
+    gather_subset: [min, mounts]
+
+- name: Collect service facts
+  ansible.builtin.service_facts:
+
+- name: Listening TCP sockets
+  ansible.builtin.command: ss -H -tln
+  register: ztp_si_ss
+  changed_when: false
+
+- name: Build sysinfo data
+  ansible.builtin.set_fact:
+    ztp_sysinfo_data:
+      services_running: >-
+        {{ ansible_facts.services | dict2items
+           | selectattr('value.state', 'equalto', 'running')
+           | map(attribute='key')
+           | map('regex_replace', '\.service$', '')
+           | unique | sort | list }}
+      listening_ports: >-
+        {{ ztp_si_ss.stdout_lines | map('split') | map(attribute='3')
+           | map('regex_replace', '^.*:', '') | map('int')
+           | unique | sort | list }}
+      disk: >-
+        {%- set r = [] -%}
+        {%- for m in ansible_facts.mounts
+              if m.fstype in ztp_sysinfo_disk_fstypes and m.size_total > 0 -%}
+        {%- set _ = r.append({
+              'mount': m.mount,
+              'size_mb': (m.size_total / 1048576) | int,
+              'used_pct': (100 - (m.size_available * 100 / m.size_total)) | round(1)}) -%}
+        {%- endfor -%}
+        {{ r | sort(attribute='mount') }}
+      kernel: "{{ ansible_facts.kernel }}"

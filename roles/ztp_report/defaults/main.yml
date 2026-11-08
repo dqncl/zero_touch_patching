@@ -1,0 +1,34 @@
+ztp_report_dir: "{{ playbook_dir }}/../reports/{{ ztp_run_id }}"   # same as ztp_sysinfo, see note below
+
+ztp_report_keep_snapshot_on: [warn, fail]
+ztp_report_fail_on_diff: false     # true = fail the host, so the orchestrator's rescue runs
+
+# Fallback for categories without a rule
+ztp_report_default_rule:
+  mode: informational
+  ignore: []                 # regexes, anchored automatically
+  on_missing: fail           # in before, not in after
+  on_added: warn             # in after, not in before
+  on_changed: fail           # exact mode, scalar values
+  on_exceeded: warn          # tolerance mode
+  max_delta_pct: 10
+  expect_change: false       # informational: warn if value did NOT change
+
+# Built-in rules per category
+ztp_report_rules_default:
+  services_running:
+    mode: exact
+    ignore: ['sshd@.*', 'user@[0-9]+', 'user-runtime-dir@[0-9]+']
+  listening_ports:
+    mode: exact
+  disk:
+    mode: tolerance
+    max_delta_pct: 10
+  kernel:
+    mode: informational
+  patch_level:
+    mode: informational
+
+# Your overrides (group_vars / host_vars), merged per category on top of the defaults
+ztp_report_rules: {}
+

@@ -1,0 +1,33 @@
+- name: Fetch base system updates
+  ansible.builtin.command: freebsd-update --not-running-from-cron fetch
+  environment:
+    PAGER: cat
+  changed_when: false
+
+- name: Install base system updates
+  ansible.builtin.command: freebsd-update --not-running-from-cron install
+  environment:
+    PAGER: cat
+  register: ztp_u_fbsd
+  failed_when: ztp_u_fbsd.rc not in [0, 2]     # 2 = nothing to install
+  changed_when: ztp_u_fbsd.rc == 0
+
+- name: Upgrade packages
+  community.general.pkgng:
+    name: "*"
+    state: latest
+  register: ztp_u_pkg
+
+- name: Installed vs. running kernel
+  ansible.builtin.command: "freebsd-version {{ item }}"
+  loop: ["-k", "-r"]
+  register: ztp_u_ver
+  changed_when: false
+
+- name: Set result
+  ansible.builtin.set_fact:
+    ztp_update_result:
+      changed: "{{ ztp_u_fbsd.changed or ztp_u_pkg.changed }}"
+      reboot_required: "{{ ztp_u_ver.results[0].stdout != ztp_u_ver.results[1].stdout }}"
+      again: "{{ ztp_u_ver.results[0].stdout != ztp_u_ver.results[1].stdout }}"
+

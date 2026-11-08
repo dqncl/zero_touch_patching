@@ -1,0 +1,73 @@
+- name: Validate settings
+  ansible.builtin.assert:
+    that:
+      - ztp_update_reboot in ['auto', 'always', 'never']
+      - ansible_facts.os_family in ['Debian', 'RedHat', 'Suse', 'Windows', 'FreeBSD', 'OpenBSD']
+      - ansible_facts.os_family == 'RedHat'
+        or not (ztp_update_security_only | bool or ztp_update_exclude | length > 0)
+    fail_msg: >-
+      {{ inventory_hostname }}: invalid update settings
+      (os_family={{ ansible_facts.os_family }}; security_only/exclude only work on RedHat)
+    quiet: true
+
+- name: Initialise state
+  ansible.builtin.set_fact:
+    ztp_u_status: failed            # flipped to ok at the end of the block
+    ztp_u_error: ""
+    ztp_u_pass: 1
+    ztp_u_changed: false
+    ztp_u_rebooted: false
+    ztp_u_pending_reboot: false
+    ztp_u_continue: false
+    ztp_u_started: "{{ now().timestamp() | int }}"
+
+- name: Update workflow
+  block:
+    - name: Pre-checks
+      ansible.builtin.include_tasks: precheck.yml
+
+    - name: Run update pass(es)
+      ansible.builtin.include_tasks: pass.yml
+
+    - name: Mark success
+      ansible.builtin.set_fact:
+        ztp_u_status: ok
+
+  rescue:
+    - name: Remember error
+      ansible.builtin.set_fact:
+        ztp_u_error: "{{ ansible_failed_result.msg | default('unknown error') }}"
+
+  always:
+    - name: Create host report directory
+      ansible.builtin.file:
+        path: "{{ ztp_report_dir }}/{{ inventory_hostname }}"
+        state: directory
+        mode: "0750"
+      delegate_to: localhost
+      become: false
+
+    - name: Write update status on controller
+      ansible.builtin.copy:
+        content: >-
+          {{ {'host': inventory_hostname,
+              'run_id': ztp_run_id,
+              'status': ztp_u_status,
+              'error': ztp_u_error,
+              'changed': ztp_u_changed | bool,
+              'rebooted': ztp_u_rebooted | bool,
+              'reboot_pending': ztp_u_pending_reboot | bool,
+              'incomplete': ztp_u_continue | bool,
+              'passes': ztp_u_pass | int,
+              'duration_s': (now().timestamp() | int) - (ztp_u_started | int)}
+             | to_nice_json }}
+        dest: "{{ ztp_report_dir }}/{{ inventory_hostname }}/update.json"
+        mode: "0640"
+      delegate_to: localhost
+      become: false
+
+    - name: Fail the host if the update failed
+      ansible.builtin.fail:
+        msg: "{{ inventory_hostname }}: update failed: {{ ztp_u_error }} (snapshot kept)"
+      when: ztp_u_status != 'ok'
+

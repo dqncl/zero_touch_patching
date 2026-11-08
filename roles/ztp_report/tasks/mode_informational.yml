@@ -1,0 +1,14 @@
+- name: Result
+  ansible.builtin.set_fact:
+    ztp_rp_result:
+      category: "{{ ztp_rp_cat }}"
+      mode: informational
+      verdict: >-
+        {{ 'warn' if (ztp_rp_rule.expect_change | bool
+                      and ztp_rp_before[ztp_rp_cat] == ztp_rp_after[ztp_rp_cat])
+           else 'info' if ztp_rp_before[ztp_rp_cat] != ztp_rp_after[ztp_rp_cat]
+           else 'ok' }}
+      details:
+        before: "{{ ztp_rp_before[ztp_rp_cat] }}"
+        after: "{{ ztp_rp_after[ztp_rp_cat] }}"
+

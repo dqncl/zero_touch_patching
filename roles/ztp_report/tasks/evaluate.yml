@@ -1,0 +1,30 @@
+- name: "Resolve rule for {{ ztp_rp_cat }}"
+  ansible.builtin.set_fact:
+    ztp_rp_rule: >-
+      {{ ztp_report_default_rule
+         | combine(ztp_report_rules_default[ztp_rp_cat] | default({}))
+         | combine(ztp_report_rules[ztp_rp_cat] | default({})) }}
+
+- name: Validate rule mode
+  ansible.builtin.assert:
+    that: ztp_rp_rule.mode in ['exact', 'tolerance', 'informational']
+    fail_msg: "Unknown mode '{{ ztp_rp_rule.mode }}' for category {{ ztp_rp_cat }}"
+    quiet: true
+
+- name: Category present on one side only
+  ansible.builtin.set_fact:
+    ztp_rp_result:
+      category: "{{ ztp_rp_cat }}"
+      mode: "{{ ztp_rp_rule.mode }}"
+      verdict: "{{ ztp_rp_rule.on_missing if ztp_rp_cat not in ztp_rp_after else ztp_rp_rule.on_added }}"
+      details:
+        note: "category only present in {{ 'before' if ztp_rp_cat not in ztp_rp_after else 'after' }}"
+  when: ztp_rp_cat not in ztp_rp_before or ztp_rp_cat not in ztp_rp_after
+
+- name: Run mode-specific comparison
+  ansible.builtin.include_tasks: "mode_{{ ztp_rp_rule.mode }}.yml"
+  when: ztp_rp_cat in ztp_rp_before and ztp_rp_cat in ztp_rp_after
+
+- name: Collect result
+  ansible.builtin.set_fact:
+    ztp_rp_results: "{{ ztp_rp_results + [ztp_rp_result] }}"

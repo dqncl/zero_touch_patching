@@ -1,0 +1,18 @@
+ztp_update_reboot: auto                  # auto = only if needed | always | never
+ztp_update_reboot_timeout: 1200
+ztp_update_post_reboot_delay: 30
+ztp_update_lock_timeout: 300             # wait for apt/dnf locks (s)
+ztp_update_min_free_mb: 1024             # free space on /var (non-Windows)
+ztp_update_max_passes: "{{ 3 if ansible_facts.os_family == 'Windows' else 2 }}"
+
+ztp_update_apt_upgrade: dist             # dist | safe | full | yes
+ztp_update_suse_method: patch            # patch | update
+ztp_update_exclude: []                   # RedHat only
+ztp_update_security_only: false          # RedHat only
+ztp_update_windows_categories: [CriticalUpdates, SecurityUpdates, UpdateRollups]
+ztp_update_windows_reject: []
+
+ztp_update_boot_time_command:            # the BSDs have no /proc boot_id
+  FreeBSD: sysctl -n kern.boottime
+  OpenBSD: sysctl -n kern.boottime
+

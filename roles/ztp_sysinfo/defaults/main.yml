@@ -1,0 +1,4 @@
+ztp_sysinfo_label: ""
+ztp_sysinfo_settle_seconds: 30
+ztp_sysinfo_disk_fstypes: [ext2, ext3, ext4, xfs, btrfs, zfs, ufs]
+ztp_report_dir: "{{ playbook_dir }}/../reports/{{ ztp_run_id }}"

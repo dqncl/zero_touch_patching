@@ -1,0 +1,26 @@
+- name: Apply patches
+  ansible.builtin.command: >-
+    zypper --non-interactive
+    {{ 'patch' if ztp_update_suse_method == 'patch' else 'update' }}
+    --auto-agree-with-licenses
+  register: ztp_u_zypper
+  until: ztp_u_zypper.rc not in [7, 103]     # 7 = zypper locked, 103 = zypper updated itself, rerun
+  retries: 3
+  delay: 30
+  failed_when: ztp_u_zypper.rc not in [0, 102]
+  changed_when: >-
+    'Nothing to do' not in ztp_u_zypper.stdout
+    and 'No updates found' not in ztp_u_zypper.stdout
+
+- name: Check whether a reboot is required
+  ansible.builtin.command: zypper needs-rebooting
+  register: ztp_u_nrb
+  changed_when: false
+  failed_when: false
+
+- name: Set result
+  ansible.builtin.set_fact:
+    ztp_update_result:
+      changed: "{{ ztp_u_zypper.changed }}"
+      reboot_required: "{{ ztp_u_zypper.rc == 102 or ztp_u_nrb.rc == 102 }}"
+

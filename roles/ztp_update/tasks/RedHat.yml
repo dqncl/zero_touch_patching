@@ -1,0 +1,27 @@
+- name: Ensure needs-restarting is available
+  ansible.builtin.dnf:
+    name: dnf-utils
+    state: present
+
+- name: Update all packages
+  ansible.builtin.dnf:
+    name: "*"
+    state: latest
+    update_cache: true
+    exclude: "{{ ztp_update_exclude }}"
+    security: "{{ ztp_update_security_only }}"
+    lock_timeout: "{{ ztp_update_lock_timeout }}"
+  register: ztp_u_dnf
+
+- name: Check whether a reboot is required
+  ansible.builtin.command: dnf needs-restarting -r
+  register: ztp_u_nr
+  changed_when: false
+  failed_when: ztp_u_nr.rc not in [0, 1]
+
+- name: Set result
+  ansible.builtin.set_fact:
+    ztp_update_result:
+      changed: "{{ ztp_u_dnf.changed }}"
+      reboot_required: "{{ ztp_u_nr.rc == 1 }}"
+

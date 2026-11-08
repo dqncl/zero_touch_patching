@@ -1,0 +1,33 @@
+- name: Index mounts
+  ansible.builtin.set_fact:
+    ztp_rp_bm: "{{ ztp_rp_before[ztp_rp_cat] | items2dict(key_name='mount', value_name='used_pct') }}"
+    ztp_rp_am: "{{ ztp_rp_after[ztp_rp_cat] | items2dict(key_name='mount', value_name='used_pct') }}"
+
+- name: Compare mounts
+  ansible.builtin.set_fact:
+    ztp_rp_missing: "{{ ztp_rp_bm.keys() | list | difference(ztp_rp_am.keys() | list) | sort }}"
+    ztp_rp_added: "{{ ztp_rp_am.keys() | list | difference(ztp_rp_bm.keys() | list) | sort }}"
+    ztp_rp_exceeded: >-
+      {%- set r = [] -%}
+      {%- for m, now in ztp_rp_am.items() if m in ztp_rp_bm -%}
+      {%- set d = (now - ztp_rp_bm[m]) | round(1) -%}
+      {%- if d | abs > ztp_rp_rule.max_delta_pct | float -%}
+      {%- set _ = r.append({'mount': m, 'before': ztp_rp_bm[m], 'after': now, 'delta': d}) -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {{ r }}
+
+- name: Result
+  ansible.builtin.set_fact:
+    ztp_rp_result:
+      category: "{{ ztp_rp_cat }}"
+      mode: tolerance
+      verdict: >-
+        {{ ztp_rp_rule.on_missing if ztp_rp_missing | length > 0
+           else ztp_rp_rule.on_added if ztp_rp_added | length > 0
+           else ztp_rp_rule.on_exceeded if ztp_rp_exceeded | length > 0
+           else 'ok' }}
+      details:
+        missing_mounts: "{{ ztp_rp_missing }}"
+        new_mounts: "{{ ztp_rp_added }}"
+        exceeded: "{{ ztp_rp_exceeded }}"

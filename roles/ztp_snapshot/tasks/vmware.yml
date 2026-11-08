@@ -1,0 +1,21 @@
+- name: "VMware snapshot {{ ztp_snapshot_state }}: {{ ztp_snapshot_name }} ({{ ztp_hypervisor }})"
+  community.vmware.vmware_guest_snapshot:
+    hostname: "{{ ztp_hv.hostname }}"
+    port: "{{ ztp_hv.port | default(443) }}"
+    username: "{{ ztp_hv.username }}"
+    password: "{{ ztp_hv.password }}"
+    validate_certs: "{{ ztp_hv.validate_certs | default(true) }}"
+    datacenter: "{{ ztp_vmware_datacenter | default(ztp_hv.datacenter | default(omit)) }}"
+    folder: "{{ ztp_vmware_folder | default(omit) }}"
+    uuid: "{{ ztp_vmware_uuid | default(omit) }}"
+    name: "{{ (ztp_vmware_vm_name | default(inventory_hostname)) if ztp_vmware_uuid is not defined else omit }}"
+    snapshot_name: "{{ ztp_snapshot_name }}"
+    description: "{{ ztp_snapshot_description }}"
+    memory_dump: "{{ ztp_snapshot_with_memory }}"
+    quiesce: "{{ ztp_snapshot_quiesce }}"
+    state: "{{ ztp_snapshot_state }}"
+  delegate_to: localhost
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  no_log: "{{ ztp_snapshot_no_log }}"
+
